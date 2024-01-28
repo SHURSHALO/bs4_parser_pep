@@ -17,3 +17,4 @@ EXPECTED_STATUS = {
     'W': ('Withdrawn',),
     '': ('Draft', 'Active'),
 }
+DOWNLOAD_DIR_PATH = 'downloads'
