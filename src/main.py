@@ -5,7 +5,8 @@ from urllib.parse import urljoin
 import requests_cache
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-from typing import Tuple, Optional, List, Any
+from typing import Tuple, Optional, List
+from requests import Session, Response
 
 from constants import (
     BASE_DIR,
@@ -23,8 +24,8 @@ from utils import get_response, find_tag
 
 
 def get_response_and_soup(
-    session: Any, url: str, features: str = 'lxml'
-) -> Tuple[Any, Any]:
+    session: Session, url: str, features: str = 'lxml'
+) -> Tuple[Optional[Response], Optional[BeautifulSoup]]:
     response = get_response(session, url)
     if response is None:
         return None, None
@@ -32,7 +33,7 @@ def get_response_and_soup(
     return response, soup
 
 
-def whats_new(session: Any) -> Optional[List[Tuple[str, str, str]]]:
+def whats_new(session) -> Optional[List[Tuple[str, str, str]]]:
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response, soup = get_response_and_soup(session, whats_new_url)
     if response is None:
@@ -58,7 +59,7 @@ def whats_new(session: Any) -> Optional[List[Tuple[str, str, str]]]:
     return results
 
 
-def latest_versions(session: Any) -> List[Tuple[str, str, str]]:
+def latest_versions(session) -> List[Tuple[str, str, str]]:
 
     response, soup = get_response_and_soup(session, MAIN_DOC_URL)
     if response is None:
@@ -95,7 +96,7 @@ def latest_versions(session: Any) -> List[Tuple[str, str, str]]:
     return results
 
 
-def download(session: Any) -> None:
+def download(session) -> None:
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response, soup = get_response_and_soup(session, downloads_url)
     if response is None:
@@ -115,7 +116,7 @@ def download(session: Any) -> None:
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def pep(session: Any) -> List[Tuple[str, int]]:
+def pep(session) -> List[Tuple[str, int]]:
 
     response = get_response(session, PEP_DOC_URL)
     if response is None:
