@@ -1,13 +1,16 @@
 import logging
+from requests import Session, Response
 from requests import RequestException
+from typing import Optional
 
 from exceptions import ParserFindTagException
+from constants import CSV_ENCODING
 
 
-def get_response(session, url):
+def get_response(session: Session, url: str) -> Optional[Response]:
     try:
         response = session.get(url)
-        response.encoding = 'utf-8'
+        response.encoding = CSV_ENCODING
         return response
     except RequestException:
         logging.exception(

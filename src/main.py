@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 import requests_cache
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+from typing import Tuple, Optional, List, Any
 
 from constants import (
     BASE_DIR,
@@ -12,13 +13,18 @@ from constants import (
     PEP_DOC_URL,
     EXPECTED_STATUS,
     DOWNLOAD_DIR_PATH,
+    HTMLTag,
+    RegexPatterns,
+    CSV_ENCODING,
 )
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
 from utils import get_response, find_tag
 
 
-def get_response_and_soup(session, url, features='lxml'):
+def get_response_and_soup(
+    session: Any, url: str, features: str = 'lxml'
+) -> Tuple[Any, Any]:
     response = get_response(session, url)
     if response is None:
         return None, None
@@ -26,47 +32,51 @@ def get_response_and_soup(session, url, features='lxml'):
     return response, soup
 
 
-def whats_new(session):
+def whats_new(session: Any) -> Optional[List[Tuple[str, str, str]]]:
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response, soup = get_response_and_soup(session, whats_new_url)
     if response is None:
         return
-    div_with_ul = find_tag(soup, 'div', attrs={'class': 'toctree-wrapper'})
+    div_with_ul = find_tag(
+        soup, HTMLTag.DIV, attrs={'class': 'toctree-wrapper'}
+    )
     sections_by_python = div_with_ul.find_all(
-        'li', attrs={'class': 'toctree-l1'}
+        HTMLTag.LI, attrs={'class': 'toctree-l1'}
     )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
-        version_a_tag = find_tag(section, 'a')
+        version_a_tag = find_tag(section, HTMLTag.A)
         href = version_a_tag['href']
         version_link = urljoin(whats_new_url, href)
         response, soup = get_response_and_soup(session, version_link)
         if response is None:
             continue
-        h1 = find_tag(soup, 'h1')
-        dl = find_tag(soup, 'dl')
+        h1 = find_tag(soup, HTMLTag.H1)
+        dl = find_tag(soup, HTMLTag.DL)
         dl_text = dl.text.replace('\n', ' ')
         results.append((version_link, h1.text, dl_text))
     return results
 
 
-def latest_versions(session):
+def latest_versions(session: Any) -> List[Tuple[str, str, str]]:
 
     response, soup = get_response_and_soup(session, MAIN_DOC_URL)
     if response is None:
         return
-    sidebar = find_tag(soup, 'div', attrs={'class': 'sphinxsidebarwrapper'})
+    sidebar = find_tag(
+        soup, HTMLTag.DIV, attrs={'class': 'sphinxsidebarwrapper'}
+    )
 
-    ul_tags = sidebar.find_all('ul')
+    ul_tags = sidebar.find_all(HTMLTag.UL)
     for ul in ul_tags:
         if 'All versions' in ul.text:
-            a_tags = ul.find_all('a')
+            a_tags = ul.find_all(HTMLTag.A)
             break
     else:
         raise Exception('Не найден список c версиями Python')
 
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
-    pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
+    pattern = RegexPatterns.PYTHON_VERSION_STATUS
 
     for a_tag in a_tags:
 
@@ -85,13 +95,13 @@ def latest_versions(session):
     return results
 
 
-def download(session):
+def download(session: Any) -> None:
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response, soup = get_response_and_soup(session, downloads_url)
     if response is None:
         return
     pdf_a4_tag = find_tag(
-        soup, 'a', attrs={'href': re.compile(r'.+pdf-a4\.zip$')}
+        soup, HTMLTag.A, attrs={'href': RegexPatterns.PDF_A4_LINK}
     )
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
@@ -105,25 +115,29 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def pep(session):
+def pep(session: Any) -> List[Tuple[str, int]]:
 
     response = get_response(session, PEP_DOC_URL)
     if response is None:
         return
 
     soup = BeautifulSoup(response.text, features='lxml')
-    section = find_tag(soup, 'section', attrs={'id': 'index-by-category'})
+    section = find_tag(
+        soup, HTMLTag.SECTION, attrs={'id': 'index-by-category'}
+    )
 
-    table = section.find_all('table')
+    table = section.find_all(HTMLTag.TABLE)
 
-    pep_div = section.find_all('a', attrs={'class': 'pep reference internal'})
+    pep_div = section.find_all(
+        HTMLTag.A, attrs={'class': 'pep reference internal'}
+    )
     links_with_numbers = [
         link for link in pep_div if link.text.strip().isdigit()
     ]
 
     expected_status = []
     for abbr in table:
-        pop = abbr.find_all('abbr')
+        pop = abbr.find_all(HTMLTag.ABBR)
         for tag in pop:
             preview_status = tag.text[1:]
             if preview_status in EXPECTED_STATUS:
@@ -140,10 +154,10 @@ def pep(session):
         version_link = urljoin(PEP_DOC_URL, pep['href'])
 
         response = session.get(version_link)
-        response.encoding = 'utf-8'
+        response.encoding = CSV_ENCODING
         soup = BeautifulSoup(response.text, 'lxml')
 
-        abbr = soup.find('abbr')
+        abbr = soup.find(HTMLTag.ABBR)
         text = abbr.text
         list_status.append(text)
 
@@ -176,7 +190,7 @@ MODE_TO_FUNCTION = {
 }
 
 
-def main():
+def main() -> None:
 
     configure_logging()
 
