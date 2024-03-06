@@ -33,7 +33,7 @@ def get_response_and_soup(
     return response, soup
 
 
-def whats_new(session) -> Optional[List[Tuple[str, str, str]]]:
+def whats_new(session: Session) -> Optional[List[Tuple[str, str, str]]]:
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response, soup = get_response_and_soup(session, whats_new_url)
     if response is None:
@@ -59,7 +59,7 @@ def whats_new(session) -> Optional[List[Tuple[str, str, str]]]:
     return results
 
 
-def latest_versions(session) -> List[Tuple[str, str, str]]:
+def latest_versions(session: Session) -> List[Tuple[str, str, str]]:
 
     response, soup = get_response_and_soup(session, MAIN_DOC_URL)
     if response is None:
@@ -96,7 +96,7 @@ def latest_versions(session) -> List[Tuple[str, str, str]]:
     return results
 
 
-def download(session) -> None:
+def download(session: Session) -> None:
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response, soup = get_response_and_soup(session, downloads_url)
     if response is None:
@@ -116,7 +116,7 @@ def download(session) -> None:
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def pep(session) -> List[Tuple[str, int]]:
+def pep(session: Session) -> List[Tuple[str, int]]:
 
     response = get_response(session, PEP_DOC_URL)
     if response is None:
