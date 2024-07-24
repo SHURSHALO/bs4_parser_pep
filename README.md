@@ -23,6 +23,4 @@ pip install -r requirements.txt.
 ```
 python parser.py whats-new -o pretty
 ```
-### Зависимости
-Python 3.x
-Библиотеки Python: requests, BeautifulSoup, prettytable
+
