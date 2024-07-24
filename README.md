@@ -21,6 +21,6 @@ pip install -r requirements.txt.
 ```
 Запустите парсер, указав режим работы и необходимые параметры:
 ```
-python parser.py whats-new -o pretty
+python main.py whats-new -o pretty
 ```
 
