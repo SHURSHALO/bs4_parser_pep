@@ -39,4 +39,3 @@ pip install -r requirements.txt.
 ```
 python main.py whats-new -o pretty
 ```
-
